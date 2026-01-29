@@ -1,6 +1,6 @@
 all: build
 
 build:
-	g++ -std=c++23 \
+	clang++ -std=c++23 -glldb -fno-omit-frame-pointer -Og \
     -Wall -Wextra -pedantic -Werror -Wcast-qual -Wconversion-null -Wmissing-declarations -Woverlength-strings -Wpointer-arith -Wunused-local-typedefs -Wunused-result -Wvarargs -Wvla -Wwrite-strings \
-	src/*.cpp
+	src/*.cpp -o out

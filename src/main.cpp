@@ -29,19 +29,28 @@ struct Debug {
 	~Debug() { std::cout << "destroying\n"; }
 };
 
-void print_any(Any a) {
+void print_any(Any& a) {
 	std::cout << "casting.." << "\n";
-	auto casted = a.value<Debug>();
+	auto casted = a.get_value<Debug>();
+	std::cout << casted.m_value << "\n";
+}
+
+void print_any_nocopy(Any& a) {
+	std::cout << "casting.." << "\n";
+	auto const& casted = a.get_ref<Debug>();
 	std::cout << casted.m_value << "\n";
 }
 } // namespace
 
 int main() {
 	Debug j{123};
-	Any a = j;
+	Any a{j};
 
 	std::cout << "printing..\n";
 	print_any(a);
+
+	std::cout << "printing, no copy:\n";
+	print_any_nocopy(a);
 
 	return 0;
 }
