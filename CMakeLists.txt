@@ -4,9 +4,9 @@ project(headache LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_library(any_lib INTERFACE)
-target_compile_features(any_lib INTERFACE cxx_std_23)
-target_compile_options(any_lib INTERFACE
+add_library(lib INTERFACE)
+target_compile_features(lib INTERFACE cxx_std_23)
+target_compile_options(lib INTERFACE
 	-pedantic
 	-Wall
 	-Wpedantic
@@ -36,9 +36,14 @@ FetchContent_MakeAvailable(Catch2)
 
 add_executable(any_test "${PROJECT_SOURCE_DIR}/src/any_test.cpp")
 target_include_directories(any_test PUBLIC "${PROJECT_SOURCE_DIR}/src")
-target_link_libraries(any_test PRIVATE any_lib Catch2::Catch2WithMain)
+target_link_libraries(any_test PRIVATE lib Catch2::Catch2WithMain)
+
+add_executable(shared_ptr_test "${PROJECT_SOURCE_DIR}/src/shared_ptr_test.cpp")
+target_include_directories(shared_ptr_test PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(shared_ptr_test PRIVATE lib Catch2::Catch2WithMain)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(CTest)
 include(Catch)
 catch_discover_tests(any_test)
+catch_discover_tests(shared_ptr_test)

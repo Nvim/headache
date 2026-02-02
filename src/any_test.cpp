@@ -40,25 +40,52 @@ TEST_CASE("Create any from r-value") {
 	REQUIRE_THAT(val, Catch::Matchers::WithinAbs(42.2f, .1f));
 }
 
-// TODO: test throws as expected but macro doesn't pick it up
-TEST_CASE("Retrieve wrong type throws") {
+TEST_CASE("Retrieve wrong type throws (obvious)") {
 	Any a{17};
 
 	// Same type
 	auto val = a.get_value<int>();
 	REQUIRE(val == 17);
 
-	// All my homies hate implicit conversion
-	// REQUIRE_THROWS([&]() {
-	// 	auto temp = a.get_value<float>();
-	// 	(void)temp;
-	// });
+	struct CantConvert {
+		std::array<char, 8> cant{"example"};
+	};
+	CantConvert f{};
+	Any fails{f};
+	REQUIRE_THROWS(fails.get_value<int>());
+}
 
-	// Obviously this fails too
-	// struct CantConvert {
-	// 	std::array<char, 8> cant{"example"};
-	// };
-	// CantConvert f{};
-	// Any fails{f};
-	// REQUIRE_THROWS(fails.get_value<int>());
+// All my homies hate implicit conversion
+TEST_CASE("Retrieve wrong type throws (implicit conversions)") {
+
+	Any int_any{17};
+	REQUIRE_THROWS([&]() {
+		auto temp = int_any.get_value<float>();
+		(void)temp;
+	}());
+	auto val = int_any.get_value<int>();
+	REQUIRE(val == 17);
+
+
+	// Trickier ones:
+	REQUIRE_THROWS([&]() {
+		auto temp = int_any.get_value<long>();
+		(void)temp;
+	}());
+
+	Any long_any{17l};
+	REQUIRE_THROWS([&]() {
+		auto temp = long_any.get_value<int>();
+		(void)temp;
+	}());
+	auto temp = long_any.get_value<long>();
+	(void)temp;
+
+	Any double_any{17.0};
+	REQUIRE_THROWS([&]() {
+		auto temp = double_any.get_value<float>();
+		(void)temp;
+	}());
+	auto temp2 = double_any.get_value<double>();
+	(void)temp2;
 }
