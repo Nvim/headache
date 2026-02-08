@@ -2,6 +2,13 @@
 
 // #include <initializer_list>
 #include <memory>
+#include <print>
+
+namespace {
+struct RefCount {
+	uint64_t count{1}; // TODO: atomic?
+};
+} // namespace
 
 template <typename T>
 struct SharedPtr {
@@ -9,27 +16,42 @@ struct SharedPtr {
 	constexpr SharedPtr() noexcept = default;
 
 	explicit SharedPtr(T* raw)
-		: m_destroy{std::default_delete<T>()}, m_raw{raw} {};
+		: m_destroy{std::default_delete<T>()}, m_raw{raw},
+		  m_refcount{new RefCount} {}
 
 	template <typename Dtor>
 	SharedPtr(T* raw, Dtor d)
-		: m_destroy(new DestroyImpl<Dtor>(d)), m_raw{raw} {}
+		: m_destroy(new DestroyImpl<Dtor>(d)), m_raw{raw},
+		  m_refcount{new RefCount} {}
 
 	template <typename Dtor>
-	SharedPtr(Dtor d) : m_destroy(new DestroyImpl<Dtor>(d)) {}
+	SharedPtr(std::nullptr_t, Dtor d)
+		: m_destroy(new DestroyImpl<Dtor>(d)), m_refcount{nullptr} {}
 
-	// ~SharedPtr() {
-	// 	if (m_raw) { m_destroy(m_raw); }
-	// }
+	~SharedPtr() {
+		if (m_raw == nullptr) { return; }
+		if (m_refcount != nullptr && --m_refcount->count == 0) {
+			m_destroy->operator()(m_raw);
+			delete m_destroy;
+		}
+	}
 
-	// TODO: move semantics
 	// SharedPtr(std::initializer_list<T> args);
-	// SharedPtr(T* raw, void (*dtor)(T* self));
 	// SharedPtr(std::initializer_list<T> args, void (*dtor)(T* self));
 
+	// TODO: move semantics
 	// SharedPtr(SharedPtr& other);
 	// SharedPtr(SharedPtr&& other) noexcept;
-	// SharedPtr& operator=(SharedPtr const& other);
+	// SharedPtr& operator=(SharedPtr const& other) {
+	// 	if (this == other) {
+	// 		return *this;
+	// 	}
+	// 	this->m_refcount = other.m_refcount;
+	// 	this->m_destroy = other.m_destroy;
+	// 	this->m_raw = other.m_raw;
+	// 	m_refcount->count++;
+	// 	return *this;
+	// }
 	// SharedPtr& operator=(SharedPtr&& other) noexcept;
 
 	T* get() { return m_raw; }
@@ -55,4 +77,5 @@ struct SharedPtr {
 
 	IDestroy* m_destroy{nullptr};
 	T* m_raw{nullptr};
+	RefCount* m_refcount;
 };
